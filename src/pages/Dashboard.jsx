@@ -104,7 +104,7 @@ export default function Dashboard() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 14, marginBottom: 32
+        gap: 12, marginBottom: 28
       }}>
         {stats.map((s, i) => (
           <div key={s.label} className="card" style={{
@@ -146,8 +146,13 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── Main grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+      {/* ── Main grid — side by side on desktop, stacked on mobile ── */}
+           <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: 20,
+                  alignItems: 'start',
+              }}>
 
         {/* Recent complaints */}
         <div>
@@ -193,54 +198,76 @@ export default function Dashboard() {
                   + New Complaint
                 </Link>
               </div>
-            ) : (
+             ) : (
               complaints.slice(0, 5).map((c, i) => (
-                <div key={c._id} className="card" style={{
-                  padding: '14px 18px',
-                  display: 'flex', alignItems: 'center',
-                  gap: 14, cursor: 'pointer',
-                  animation: `fadeUp 0.4s ease both ${0.1 + i * 0.07}s`,
-                  transition: 'transform 0.18s ease, border-color 0.18s ease'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateX(4px)';
-                  e.currentTarget.style.borderColor = 'var(--border-hover)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateX(0)';
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                }}
-                >
-                  {/* Icon */}
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 11, flexShrink: 0,
-                    background: 'var(--bg-hover)',
-                    border: '1px solid var(--border)',
-                    display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 20
-                  }}>
-                    {ISSUE_ICONS[c.issueType] || '🔧'}
-                  </div>
+  <div
+    key={c._id}
+    className="card"
+    style={{
+      padding: '14px 18px',
+      display: 'flex', alignItems: 'center',
+      gap: 14, cursor: 'pointer',
+      animation: `fadeUp 0.4s ease both ${0.1 + i * 0.07}s`,
+      transition: 'all 0.2s ease',
+    }}
+    onMouseEnter={e => {
+      e.currentTarget.style.transform = 'translateX(6px)';
+      e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)';
+      e.currentTarget.style.background = 'var(--bg-hover)';
+      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+    }}
+    onMouseLeave={e => {
+      e.currentTarget.style.transform = 'translateX(0)';
+      e.currentTarget.style.borderColor = 'var(--border)';
+      e.currentTarget.style.background = 'var(--bg-card)';
+      e.currentTarget.style.boxShadow = 'none';
+    }}
+  >
+    {/* Icon box */}
+    <div style={{
+      width: 44, height: 44,
+      borderRadius: 11, flexShrink: 0,
+      background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))',
+      border: '1px solid rgba(99,102,241,0.2)',
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 22, lineHeight: 1
+    }}>
+      {ISSUE_ICONS[c.issueType] || '🔧'}
+    </div>
 
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 14, fontWeight: 500,
-                      color: 'var(--text)', textTransform: 'capitalize',
-                      marginBottom: 3
-                    }}>
-                      {c.issueType} issue — {c.category}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-faint)' }}>
-                      {c.ticketId} &nbsp;·&nbsp; Floor {c.floor}, Room {c.roomNumber} &nbsp;·&nbsp;
-                      {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </div>
-                  </div>
+    {/* Info */}
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{
+        fontSize: 14, fontWeight: 500,
+        color: 'var(--text)', textTransform: 'capitalize',
+        marginBottom: 4
+      }}>
+        {c.issueType} issue — {c.category}
+      </div>
+      <div style={{
+        fontSize: 12, color: 'var(--text-faint)',
+        display: 'flex', alignItems: 'center', gap: 6
+      }}>
+        <span>{c.ticketId}</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>Floor {c.floor}, Room {c.roomNumber}</span>
+        <span style={{ opacity: 0.4 }}>·</span>
+        <span>{new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+      </div>
+    </div>
 
-                  {/* Badge */}
-                  <StatusBadge status={c.status} />
-                </div>
-              ))
+    {/* Badge + arrow */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+      <StatusBadge status={c.status} />
+      <svg style={{ color: 'var(--text-faint)', flexShrink: 0 }}
+        width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </div>
+  </div>
+))
             )}
           </div>
         </div>
