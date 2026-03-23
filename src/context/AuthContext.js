@@ -5,10 +5,10 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   // Fake user for testing — remove this later when backend is ready
   const [user, setUser] = useState({
-    name: 'Pavan Kumar',
-    email: 'pavan@glbitm.ac.in',
+    name: 'Keshav Gupta',
+    email: 'Keshav@glbitm.ac.in',
     avatar: null,
-    role: 'student'
+    role: 'admin'
   });
 
   const logout = () => setUser(null);
