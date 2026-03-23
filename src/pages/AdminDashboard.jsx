@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 
 // ─────────────────────────────────────────────
 // ICON MAP
-// Maps issue type to emoji icon
 // ─────────────────────────────────────────────
 const ISSUE_ICONS = {
   fan: '🌀', window: '🪟', door: '🚪',
@@ -12,9 +11,7 @@ const ISSUE_ICONS = {
 };
 
 // ─────────────────────────────────────────────
-// MOCK DATA
-// Fake complaints from all students
-// Replace with real API call later
+// MOCK DATA — replace with API later
 // ─────────────────────────────────────────────
 const MOCK_ALL_COMPLAINTS = [
   {
@@ -65,7 +62,7 @@ const MOCK_ALL_COMPLAINTS = [
 ];
 
 // ─────────────────────────────────────────────
-// STATUS BADGE COMPONENT
+// STATUS BADGE
 // ─────────────────────────────────────────────
 function StatusBadge({ status }) {
   const map = {
@@ -78,9 +75,8 @@ function StatusBadge({ status }) {
 }
 
 // ─────────────────────────────────────────────
-// UPDATE MODAL COMPONENT
-// Shown when admin clicks "Update" on a complaint
-// Allows changing status, assigning worker, adding note
+// UPDATE MODAL
+// Opens when admin clicks Update on a complaint
 // ─────────────────────────────────────────────
 function UpdateModal({ complaint, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -95,9 +91,9 @@ function UpdateModal({ complaint, onClose, onSave }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // TODO: Replace with real API call
+      // TODO: replace with real API call
       // await axios.patch(`/api/admin/complaints/${complaint._id}`, form, { withCredentials: true });
-      await new Promise(r => setTimeout(r, 800)); // fake delay
+      await new Promise(r => setTimeout(r, 800));
       onSave(complaint._id, form);
       toast.success(`${complaint.ticketId} updated! Student notified.`);
       onClose();
@@ -125,7 +121,8 @@ function UpdateModal({ complaint, onClose, onSave }) {
         padding: 28,
         animation: 'fadeUp 0.25s ease both',
       }}>
-        {/* Modal header */}
+
+        {/* Header */}
         <div style={{
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'flex-start', marginBottom: 20,
@@ -141,7 +138,6 @@ function UpdateModal({ complaint, onClose, onSave }) {
               Floor {complaint.floor}, Room {complaint.roomNumber}
             </p>
           </div>
-          {/* Close button */}
           <button
             onClick={onClose}
             style={{
@@ -155,7 +151,7 @@ function UpdateModal({ complaint, onClose, onSave }) {
           >✕</button>
         </div>
 
-        {/* Student info banner */}
+        {/* Student info */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 14px', borderRadius: 10,
@@ -163,12 +159,10 @@ function UpdateModal({ complaint, onClose, onSave }) {
           border: '1px solid var(--border)',
           marginBottom: 20,
         }}>
-          {/* Student avatar initials */}
           <div style={{
             width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
             background: 'linear-gradient(135deg, var(--indigo), var(--violet))',
-            display: 'flex', alignItems: 'center',
-            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 13, fontWeight: 600, color: 'white',
           }}>
             {complaint.student.name[0]}
@@ -181,7 +175,9 @@ function UpdateModal({ complaint, onClose, onSave }) {
               {complaint.student.email}
             </div>
           </div>
-          <StatusBadge status={complaint.status} />
+          <div style={{ marginLeft: 'auto' }}>
+            <StatusBadge status={complaint.status} />
+          </div>
         </div>
 
         {/* Status selector */}
@@ -202,9 +198,12 @@ function UpdateModal({ complaint, onClose, onSave }) {
                   cursor: 'pointer', fontSize: 12,
                   fontWeight: 500, border: 'none',
                   transition: 'all 0.15s ease',
-                  // Highlight selected option
                   background: form.status === opt.value
-                    ? `rgba(${opt.value === 'open' ? '245,158,11' : opt.value === 'in-progress' ? '129,140,248' : '16,185,129'},0.15)`
+                    ? `rgba(${
+                        opt.value === 'open'        ? '245,158,11' :
+                        opt.value === 'in-progress' ? '129,140,248' :
+                                                      '16,185,129'
+                      },0.15)`
                     : 'var(--bg)',
                   color: form.status === opt.value ? opt.color : 'var(--text-muted)',
                   outline: `2px solid ${form.status === opt.value ? opt.color : 'transparent'}`,
@@ -239,13 +238,9 @@ function UpdateModal({ complaint, onClose, onSave }) {
           />
         </div>
 
-        {/* Action buttons */}
+        {/* Buttons */}
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-          <button
-            className="btn btn-ghost"
-            onClick={onClose}
-            style={{ flex: 1 }}
-          >
+          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1 }}>
             Cancel
           </button>
           <button
@@ -274,28 +269,246 @@ function UpdateModal({ complaint, onClose, onSave }) {
 }
 
 // ─────────────────────────────────────────────
-// MAIN ADMIN DASHBOARD COMPONENT
+// COMPLAINT ROW — separate component so each
+// row can have its own expanded state safely
+// This fixes the "can't use useState in .map()"
+// problem — each row is its own component
+// ─────────────────────────────────────────────
+function ComplaintRow({ complaint, index, onUpdate }) {
+  // Each row manages its own expand state
+  const [expanded, setExpanded] = useState(false);
+  const c = complaint;
+
+  return (
+    <div
+      className="card"
+      style={{
+        overflow: 'hidden',
+        animation: `fadeUp 0.35s ease both ${index * 0.06}s`,
+        transition: 'border-color 0.2s ease',
+      }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+    >
+
+      {/* ── Main row — always visible ── */}
+      <div style={{
+        padding: '14px 18px',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+
+        {/* Issue icon */}
+        <div style={{
+          width: 42, height: 42, borderRadius: 11, flexShrink: 0,
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))',
+          border: '1px solid rgba(99,102,241,0.2)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: 20,
+        }}>
+          {ISSUE_ICONS[c.issueType] || '🔧'}
+        </div>
+
+        {/* Complaint info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 14, fontWeight: 500,
+            color: 'var(--text)', textTransform: 'capitalize', marginBottom: 4,
+          }}>
+            {c.issueType} — {c.category}, Floor {c.floor}, Room {c.roomNumber}
+          </div>
+          <div style={{
+            fontSize: 12, color: 'var(--text-faint)',
+            display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+          }}>
+            <span>{c.ticketId}</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span style={{ color: 'var(--text-muted)' }}>{c.student.name}</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span>
+              {new Date(c.createdAt).toLocaleDateString('en-IN', {
+                day: 'numeric', month: 'short',
+              })}
+            </span>
+            {/* Show assigned worker if set */}
+            {c.assignedTo && (
+              <>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ color: 'var(--success)' }}>
+                  Assigned: {c.assignedTo}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Right — badge + update + expand */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          gap: 8, flexShrink: 0,
+        }}>
+          <StatusBadge status={c.status} />
+
+          {/* Update button — opens modal */}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => onUpdate(c)}
+            style={{ fontSize: 12 }}
+          >
+            Update
+          </button>
+
+          {/* Expand/collapse toggle */}
+          <button
+            onClick={() => setExpanded(prev => !prev)}
+            style={{
+              width: 28, height: 28, borderRadius: 7,
+              background: expanded ? 'var(--bg-hover)' : 'transparent',
+              border: `1px solid ${expanded ? 'var(--border-hover)' : 'var(--border)'}`,
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', cursor: 'pointer',
+              color: expanded ? 'var(--text)' : 'var(--text-faint)',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--bg-hover)';
+              e.currentTarget.style.color = 'var(--text)';
+            }}
+            onMouseLeave={e => {
+              if (!expanded) {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'var(--text-faint)';
+              }
+            }}
+          >
+            {/* Arrow rotates when expanded */}
+            <svg
+              width="12" height="12" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor"
+              strokeWidth="2.5" strokeLinecap="round"
+              style={{
+                transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.25s ease',
+              }}
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Expanded details — only shown when toggled ── */}
+      {expanded && (
+        <div style={{
+          borderTop: '1px solid var(--border)',
+          padding: '18px 20px',
+          background: 'rgba(255,255,255,0.015)',
+          animation: 'fadeUp 0.2s ease both',
+        }}>
+
+          {/* 3-column detail grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 16, marginBottom: 16,
+          }}>
+            {[
+              { label: 'Ticket ID',  value: c.ticketId   },
+              { label: 'Category',   value: c.category   },
+              { label: 'Location',   value: `Floor ${c.floor}, Room ${c.roomNumber}` },
+              { label: 'Issue Type', value: c.issueType  },
+              { label: 'Student',    value: c.student.name  },
+              { label: 'Email',      value: c.student.email },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <div style={{
+                  fontSize: 10, fontWeight: 500,
+                  color: 'var(--text-faint)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em', marginBottom: 4,
+                }}>{label}</div>
+                <div style={{
+                  fontSize: 13, color: 'var(--text)',
+                  textTransform: 'capitalize',
+                }}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Student description — only if provided */}
+          {c.description && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{
+                fontSize: 10, fontWeight: 500,
+                color: 'var(--text-faint)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em', marginBottom: 6,
+              }}>Student Description</div>
+              <div style={{
+                fontSize: 13, color: 'var(--text-muted)',
+                lineHeight: 1.6, padding: '10px 14px',
+                background: 'var(--bg)', borderRadius: 8,
+                border: '1px solid var(--border)',
+              }}>{c.description}</div>
+            </div>
+          )}
+
+          {/* Admin response — only if admin has acted */}
+          {(c.assignedTo || c.adminNote) && (
+            <div style={{
+              padding: '12px 16px', borderRadius: 10,
+              background: 'rgba(99,102,241,0.07)',
+              border: '1px solid rgba(99,102,241,0.2)',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 600,
+                color: 'var(--indigo)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em', marginBottom: 8,
+              }}>Admin Response</div>
+              {c.assignedTo && (
+                <div style={{
+                  fontSize: 13, color: 'var(--text-muted)', marginBottom: 4,
+                }}>
+                  <span style={{ color: 'var(--text-faint)' }}>Assigned to: </span>
+                  <span style={{ color: 'var(--success)', fontWeight: 500 }}>
+                    {c.assignedTo}
+                  </span>
+                </div>
+              )}
+              {c.adminNote && (
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  <span style={{ color: 'var(--text-faint)' }}>Note: </span>
+                  {c.adminNote}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MAIN ADMIN DASHBOARD
 // ─────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [mounted, setMounted]       = useState(false);
-
-  // Filter state — status and category filters
+  const [complaints, setComplaints]         = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [mounted, setMounted]               = useState(false);
   const [filterStatus,   setFilterStatus]   = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
 
-  // Which complaint is open in the update modal
+  // Which complaint is open in the update modal (null = closed)
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     setMounted(true);
     // TODO: Replace with real API call
-    // Promise.all([
-    //   axios.get('/api/admin/complaints', { withCredentials: true }),
-    //   axios.get('/api/admin/stats', { withCredentials: true }),
-    // ]).then(([cr, sr]) => { setComplaints(cr.data); setStats(sr.data); })
-
+    // axios.get('/api/admin/complaints', { withCredentials: true })
+    //   .then(r => setComplaints(r.data))
+    //   .catch(() => toast.error('Failed to load'))
+    //   .finally(() => setLoading(false));
     const t = setTimeout(() => {
       setComplaints(MOCK_ALL_COMPLAINTS);
       setLoading(false);
@@ -303,15 +516,14 @@ export default function AdminDashboard() {
     return () => clearTimeout(t);
   }, []);
 
-  // ── Update a complaint locally after modal saves ──
-  // In real app the API call handles this, here we update state directly
+  // Update a complaint locally after modal saves
   const handleSave = (id, updatedFields) => {
     setComplaints(prev =>
       prev.map(c => c._id === id ? { ...c, ...updatedFields } : c)
     );
   };
 
-  // ── Compute stats from complaints array ──
+  // Compute stats
   const stats = {
     total:      complaints.length,
     open:       complaints.filter(c => c.status === 'open').length,
@@ -319,7 +531,7 @@ export default function AdminDashboard() {
     resolved:   complaints.filter(c => c.status === 'resolved').length,
   };
 
-  // ── Apply filters ──
+  // Apply both filters
   const filtered = complaints.filter(c => {
     const statusMatch   = filterStatus   === 'all' || c.status   === filterStatus;
     const categoryMatch = filterCategory === 'all' || c.category === filterCategory;
@@ -327,44 +539,35 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div style={{
-      opacity: mounted ? 1 : 0,
-      transition: 'opacity 0.3s ease',
-    }}>
+    <div style={{ opacity: mounted ? 1 : 0, transition: 'opacity 0.3s ease' }}>
 
       {/* ── Page header ── */}
       <div style={{ marginBottom: 28 }}>
         <div style={{
-          display: 'flex', alignItems: 'flex-start',
-          justifyContent: 'space-between', gap: 16,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 10px', borderRadius: 20, marginBottom: 10,
+          background: 'rgba(139,92,246,0.12)',
+          border: '1px solid rgba(139,92,246,0.25)',
         }}>
-          <div>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 10px', borderRadius: 20, marginBottom: 10,
-              background: 'rgba(139,92,246,0.12)',
-              border: '1px solid rgba(139,92,246,0.25)',
-            }}>
-              {/* Pulse dot — live indicator */}
-              <div style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: '#a78bfa',
-                animation: 'pulse-ring 1.5s infinite',
-              }}/>
-              <span style={{ fontSize: 11, color: '#a78bfa', fontWeight: 600 }}>
-                ADMIN PANEL
-              </span>
-            </div>
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 28, fontWeight: 700,
-              color: 'var(--text)', letterSpacing: '-0.5px', marginBottom: 6,
-            }}>Admin Dashboard</h1>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-              Manage and resolve all campus complaints.
-            </p>
-          </div>
+          {/* Pulsing purple dot */}
+          <div style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: '#a78bfa',
+            boxShadow: '0 0 0 0 rgba(167,139,250,0.4)',
+            animation: 'pulse-purple 1.5s infinite',
+          }}/>
+          <span style={{ fontSize: 11, color: '#a78bfa', fontWeight: 600 }}>
+            ADMIN PANEL
+          </span>
         </div>
+        <h1 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 28, fontWeight: 700,
+          color: 'var(--text)', letterSpacing: '-0.5px', marginBottom: 6,
+        }}>Admin Dashboard</h1>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+          Manage and resolve all campus complaints.
+        </p>
       </div>
 
       {/* ── Stats row ── */}
@@ -374,10 +577,10 @@ export default function AdminDashboard() {
         gap: 12, marginBottom: 28,
       }}>
         {[
-          { label: 'Total',       value: stats.total,      color: 'var(--info)',    bg: 'rgba(129,140,248,0.1)',  border: 'rgba(129,140,248,0.2)' },
-          { label: 'Open',        value: stats.open,       color: 'var(--warning)', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.2)'  },
-          { label: 'In Progress', value: stats.inProgress, color: '#a78bfa',        bg: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.2)'  },
-          { label: 'Resolved',    value: stats.resolved,   color: 'var(--success)', bg: 'rgba(16,185,129,0.1)',   border: 'rgba(16,185,129,0.2)'  },
+          { label: 'Total',       value: stats.total,      color: 'var(--info)',    bg: 'rgba(129,140,248,0.1)', border: 'rgba(129,140,248,0.2)' },
+          { label: 'Open',        value: stats.open,       color: 'var(--warning)', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)'  },
+          { label: 'In Progress', value: stats.inProgress, color: '#a78bfa',        bg: 'rgba(139,92,246,0.1)',  border: 'rgba(139,92,246,0.2)'  },
+          { label: 'Resolved',    value: stats.resolved,   color: 'var(--success)', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.2)'  },
         ].map((s, i) => (
           <div key={s.label} style={{
             padding: '20px 22px',
@@ -401,7 +604,6 @@ export default function AdminDashboard() {
                   fontSize: 30, fontWeight: 700,
                   fontFamily: 'var(--font-display)',
                   color: s.color, marginBottom: 4,
-                  letterSpacing: '-0.5px',
                 }}>{s.value}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
                   {s.label}
@@ -412,13 +614,13 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* ── Filters row ── */}
+      {/* ── Filters ── */}
       <div style={{
         display: 'flex', gap: 10,
         marginBottom: 18, flexWrap: 'wrap',
         alignItems: 'center',
       }}>
-        {/* Status filter buttons */}
+        {/* Status filters */}
         <div style={{ display: 'flex', gap: 6 }}>
           {['all', 'open', 'in-progress', 'resolved'].map(s => (
             <button
@@ -427,7 +629,7 @@ export default function AdminDashboard() {
               style={{
                 padding: '7px 14px', borderRadius: 8,
                 fontSize: 12, fontWeight: 500,
-                cursor: 'pointer', border: 'none',
+                cursor: 'pointer',
                 transition: 'all 0.15s',
                 background: filterStatus === s
                   ? 'linear-gradient(135deg, var(--indigo), var(--violet))'
@@ -446,42 +648,39 @@ export default function AdminDashboard() {
         {/* Divider */}
         <div style={{ width: 1, height: 24, background: 'var(--border)' }}/>
 
-        {/* Category filter buttons */}
+        {/* Category filters */}
         <div style={{ display: 'flex', gap: 6 }}>
-          {['all', 'hostel', 'classroom'].map(c => (
+          {['all', 'hostel', 'classroom'].map(cat => (
             <button
-              key={c}
-              onClick={() => setFilterCategory(c)}
+              key={cat}
+              onClick={() => setFilterCategory(cat)}
               style={{
                 padding: '7px 14px', borderRadius: 8,
                 fontSize: 12, fontWeight: 500,
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                background: filterCategory === c ? 'var(--bg-hover)' : 'var(--bg-card)',
-                color: filterCategory === c ? 'var(--text)' : 'var(--text-muted)',
-                border: filterCategory === c
+                background: filterCategory === cat ? 'var(--bg-hover)' : 'var(--bg-card)',
+                color: filterCategory === cat ? 'var(--text)' : 'var(--text-muted)',
+                border: filterCategory === cat
                   ? '1px solid var(--border-hover)'
                   : '1px solid var(--border)',
                 textTransform: 'capitalize',
               }}
             >
-              {c === 'all' ? 'All Locations' : c}
+              {cat === 'all' ? 'All Locations' : cat}
             </button>
           ))}
         </div>
 
         {/* Result count */}
-        <span style={{
-          marginLeft: 'auto', fontSize: 12,
-          color: 'var(--text-faint)',
-        }}>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-faint)' }}>
           {filtered.length} complaint{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
 
-      {/* ── Complaints table ── */}
+      {/* ── Complaint list ── */}
       {loading ? (
-        // Skeleton loaders
+        // Skeleton loaders while fetching
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[1,2,3,4].map(i => (
             <div key={i} className="card" style={{ padding: '16px 20px' }}>
@@ -511,94 +710,20 @@ export default function AdminDashboard() {
           </p>
         </div>
       ) : (
+        // Each row is a separate component so it can have its own expanded state
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {filtered.map((c, i) => (
-            <div
-              key={c._id}
-              className="card"
-              style={{
-                padding: '14px 18px',
-                display: 'flex', alignItems: 'center',
-                gap: 14, animation: `fadeUp 0.35s ease both ${i * 0.06}s`,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--border-hover)';
-                e.currentTarget.style.background  = 'var(--bg-hover)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.background  = 'var(--bg-card)';
-              }}
-            >
-              {/* Issue icon */}
-              <div style={{
-                width: 42, height: 42, borderRadius: 11, flexShrink: 0,
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))',
-                border: '1px solid rgba(99,102,241,0.2)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 20,
-              }}>
-                {ISSUE_ICONS[c.issueType] || '🔧'}
-              </div>
-
-              {/* Complaint info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 14, fontWeight: 500,
-                  color: 'var(--text)', textTransform: 'capitalize',
-                  marginBottom: 4,
-                }}>
-                  {c.issueType} — {c.category}, Floor {c.floor}, Room {c.roomNumber}
-                </div>
-                <div style={{
-                  fontSize: 12, color: 'var(--text-faint)',
-                  display: 'flex', alignItems: 'center',
-                  gap: 6, flexWrap: 'wrap',
-                }}>
-                  <span>{c.ticketId}</span>
-                  <span style={{ opacity: 0.4 }}>·</span>
-                  {/* Student name */}
-                  <span style={{ color: 'var(--text-muted)' }}>{c.student.name}</span>
-                  <span style={{ opacity: 0.4 }}>·</span>
-                  <span>
-                    {new Date(c.createdAt).toLocaleDateString('en-IN', {
-                      day: 'numeric', month: 'short',
-                    })}
-                  </span>
-                  {/* Show assigned worker if present */}
-                  {c.assignedTo && (
-                    <>
-                      <span style={{ opacity: 0.4 }}>·</span>
-                      <span style={{ color: 'var(--success)' }}>
-                        Assigned: {c.assignedTo}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Status + update button */}
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                gap: 10, flexShrink: 0,
-              }}>
-                <StatusBadge status={c.status} />
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setSelected(c)}
-                  style={{ fontSize: 12 }}
-                >
-                  Update
-                </button>
-              </div>
-            </div>
+          {filtered.map((complaint, i) => (
+            <ComplaintRow
+              key={complaint._id}
+              complaint={complaint}
+              index={i}
+              onUpdate={setSelected}
+            />
           ))}
         </div>
       )}
 
-      {/* ── Update Modal ── */}
-      {/* Rendered when admin clicks Update on any complaint */}
+      {/* ── Update modal — shown when a complaint is selected ── */}
       {selected && (
         <UpdateModal
           complaint={selected}
@@ -607,15 +732,14 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* ── Spin keyframe for modal spinner ── */}
+      {/* ── Keyframes ── */}
       <style>{`
-        @keyframes pulse-ring {
-          0%   { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
+        @keyframes pulse-purple {
+          0%   { box-shadow: 0 0 0 0 rgba(167,139,250,0.5); }
           70%  { box-shadow: 0 0 0 6px rgba(167,139,250,0); }
           100% { box-shadow: 0 0 0 0 rgba(167,139,250,0); }
         }
       `}</style>
-
     </div>
   );
 }
